@@ -19,5 +19,5 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://unspongy-tawnya-noncontextually.ngrok-free.dev/authZ"
+  "https://unspongy-tawnya-noncontextually.ngrok-free.dev"
 ]

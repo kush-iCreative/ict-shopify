@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ShopDataController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -14,12 +16,14 @@ use App\Http\Controllers\SettingsController;
 |
 */
 
+// Shop data endpoints
+Route::get('/shops', [ShopDataController::class, 'getAllShops']);
+Route::get('/shops/{shopDomain}', [ShopDataController::class, 'getShopData']);
+Route::get('/shops/{shopDomain}/history', [ShopDataController::class, 'getInstallationHistory']);
+Route::post('/shops/{shopDomain}/metadata', [ShopDataController::class, 'updateShopMetadata']);
 
-   
 
-   Route::middleware('shopify.auth')->group(function () {
-       Route::post('/settings', [SettingsController::class, 'store']);
-   });
+
 
 
 

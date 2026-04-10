@@ -15,8 +15,8 @@ class CreateShopsTable extends Migration
     {
         Schema::create('shops', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // This will store the shop domain (e.g., myshop.myshopify.com)
-            $table->string('password')->nullable(); // Standard packages often store the access_token here
+            $table->string('shop')->unique(); // Field for the store domain
+            $table->string('access_token');
             $table->timestamps();
         });
     }

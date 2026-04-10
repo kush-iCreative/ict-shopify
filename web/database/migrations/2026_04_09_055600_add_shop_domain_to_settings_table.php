@@ -11,17 +11,16 @@ class AddShopDomainToSettingsTable extends Migration
      *
      * @return void
      */
-public function up()
-{
-    Schema::dropIfExists('settings'); // Caution: This deletes old settings data
-    Schema::create('settings', function ($table) {
-        $table->id();
-        $table->string('shop_domain');
-        $table->text('value');
-        $table->timestamps();
-    });
-}
-
+    public function up()
+    {
+        Schema::dropIfExists('settings'); // Caution: This deletes old settings data
+        Schema::create('settings', function ($table) {
+            $table->id();
+            $table->string('shop_domain');
+            $table->text('value');
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

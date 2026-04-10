@@ -20,7 +20,9 @@ use Shopify\Webhooks\Registry;
 use Shopify\Webhooks\Topics;
 use App\Http\Controllers\ShopifyAuthController;
 use App\Http\Controllers\SettingsController;
-use App\Models\Shop;
+use App\Http\Controllers\WebhookController;
+use App\Models\User;
+use App\Http\Controllers\ShopifyController;
 use Illuminate\Support\Facades\Http;
 /*
 |--------------------------------------------------------------------------
@@ -35,7 +37,22 @@ use Illuminate\Support\Facades\Http;
 | proxy rule for them in web/frontend/vite.config.js
 |
 */
-// Change 'verify.shopify' to 'shopify.auth'
+// 1. The URL users visit to start the install (e.g., ://your-domain.com)
+Route::get('/install', [ShopifyController::class, 'redirectToShopify'])->name('shopify.install');
+
+// 2. The Callback URL (Must match the Redirect URI in Shopify Partner Dashboard)
+// This is where your code inserts data into the 'shops' and 'installation_data' tables
+Route::get('/auth/callback', [ShopifyController::class, 'handleCallback'])->name('shopify.callback');
+
+// 3. The App Home (where the user goes after installation)
+Route::get('/app', function () {
+    return view('welcome'); // Or your app dashboard
+})->name('app');
+
+// Webhook endpoints
+Route::post('/api/webhooks/app-uninstalled', [WebhookController::class, 'handleAppUninstalled']);
+Route::post('/api/webhooks/app-installed', [WebhookController::class, 'handleAppInstalled']);
+
 Route::get('/api/settings-data', [SettingsController::class, 'index']);
 Route::post('/api/settings', [SettingsController::class, 'store']);
 
@@ -103,30 +120,6 @@ Route::get('/api/auth/callback', function (Request $request) {
 //     Route::post('/api/settings', [SettingsController::class, 'store']);
 // });
 
-//  verifies via HMAC signature
-Route::get('/proxy/settings', [SettingsController::class, 'getStorefrontData']);
-
-Route::get('/auth/callback', function (Request $request) {
-    // 1. Validate and get the session
-    $session = OAuth::callback(
-        $request->cookie(),
-        $request->query(),
-        ['App\Lib\CookieHandler', 'saveShopifyCookie'],
-    );
-
-    $shopDomain = $session->getShop();
-    $accessToken = $session->getAccessToken();
-
-    // 2. THIS SAVES THE RECORD TO YOUR SHOPS TABLE
-    Shop::updateOrCreate(
-        ['name' => $shopDomain],
-        ['password' => $accessToken] // Stores token in password column
-    );
-
-    // 3. Redirect back to the App
-    $host = $request->query('host');
-    return redirect(Utils::getEmbeddedAppUrl($host));
-});
 
 
 // Route::get('/api/products/count', function (Request $request) {
