@@ -1,68 +1,114 @@
 <?php
+
+
 namespace App\Http\Controllers;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 
-class ShopifyController extends Controller {
 
-    public function index(Request $request) {
+class ShopifyController extends Controller
+{
+    // 🔹 Auto check + install
+    public function index(Request $request)
+    {
         $shop = $request->get('shop');
         $host = $request->get('host');
 
-        if (!$shop) return "Please open this app from Shopify Admin.";
-
-        // Check if we have this shop in our table
-        $shopData = DB::table('shops')->where('shop', $shop)->first();
-
-        if (!$shopData) {
-            // WE MUST REDIRECT THE WHOLE PAGE (window.top)
-            // This is the ONLY way to fix the "Missing Host" and "Null Shop" errors.
-            $installUrl = url("/install?shop=$shop&host=$host");
-            return "<script>window.top.location.href = '$installUrl';</script>";
+        if (!$shop) {
+            return "Shop missing";
         }
 
-        return "Success! App is running for $shop. Data is in your shops table.";
+
+        // 🔥 Check DB
+        $shopData = DB::table('shops')->where('shop', $shop)->first();
+
+
+        // ❗ Not installed → redirect to install
+        if (!$shopData) {
+            return redirect('/install?shop=' . $shop . '&host=' . $host);
+        }
+
+
+        // ✅ Already installed
+        return "App running 🎉";
     }
 
-    public function install(Request $request) {
+
+    // 🔹 Install (OAuth start)
+    public function install(Request $request)
+    {
         $shop = $request->get('shop');
-        
+        $host = $request->get('host');
+
+        if (!$shop) {
+            return "Shop missing";
+        }
+
+
+        $state = bin2hex(random_bytes(16));
+        session(['state' => $state]);
+
+
+         $redirectUri = "https://unspongy-tawnya-noncontextually.ngrok-free.dev/callback?host=" . $host;
+
+
         $query = http_build_query([
             "client_id" => env('SHOPIFY_API_KEY'),
             "scope" => "read_products,write_products",
-            "redirect_uri" => "https://unspongy-tawnya-noncontextually.ngrok-free.dev/callback",
+            "redirect_uri" => $redirectUri,
+            "state" => $state,
         ]);
+
 
         return redirect("https://{$shop}/admin/oauth/authorize?" . $query);
     }
 
-    public function callback(Request $request) {
+
+    // 🔹 Callback (DB save)
+    public function callback(Request $request)
+    {
         $shop = $request->get('shop');
         $code = $request->get('code');
-        $host = $request->get('host');
+        $state = $request->get('state');
+    $host = $request->get('host'); 
 
-        // Exchange code for token
+        if ($state !== session('state')) {
+            return "Invalid state";
+        }
+
+
         $response = Http::post("https://{$shop}/admin/oauth/access_token", [
             "client_id" => env('SHOPIFY_API_KEY'),
             "client_secret" => env('SHOPIFY_API_SECRET'),
             "code" => $code
         ]);
 
+
         $data = $response->json();
 
-        if (isset($data['access_token'])) {
-            // SAVE TO YOUR TABLE
-            DB::table('shops')->updateOrInsert(
-                ['shop' => $shop],
-                ['access_token' => $data['access_token'], 'updated_at' => now()]
-            );
 
-            // Redirect back to index with host
-            return redirect('/?shop=' . $shop . '&host=' . $host);
+        if (!isset($data['access_token'])) {
+            return "Token error";
         }
 
-        return "OAuth Failed. Check your API Keys.";
+
+        $accessToken = $data['access_token'];
+
+
+        // 🔥 DB SAVE
+        DB::table('shops')->updateOrInsert(
+            ['shop' => $shop],
+            [
+                'access_token' => $accessToken,
+                'updated_at' => now()
+            ]
+        );
+
+
+        // 🔥 Redirect back to app
+        return redirect('/?shop=' . $shop . '&host=' . $host);
     }
 }
