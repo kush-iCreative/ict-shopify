@@ -26,5 +26,8 @@ return [
         "currencyCode" => "USD", // Currently only supports USD
         "interval" => EnsureBilling::INTERVAL_ONE_TIME,
     ],
+    'user_model' => App\Models\User::class,
+    'api_key' => env('SHOPIFY_API_KEY'),
+    'api_secret' => env('SHOPIFY_API_SECRET'),
 
 ];

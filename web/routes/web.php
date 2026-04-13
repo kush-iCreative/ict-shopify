@@ -37,24 +37,29 @@ use Illuminate\Support\Facades\Http;
 | proxy rule for them in web/frontend/vite.config.js
 |
 */
+Route::get('/', [ShopifyController::class, 'index']);
+Route::get('/install', [ShopifyController::class, 'install']);
+Route::get('/callback', [ShopifyController::class, 'callback']);
+
+// Route::get('/api/settings-data', [SettingsController::class, 'index']);
+// Route::post('/api/settings', [SettingsController::class, 'store']);
+
 // 1. The URL users visit to start the install (e.g., ://your-domain.com)
-Route::get('/install', [ShopifyController::class, 'redirectToShopify'])->name('shopify.install');
+// Route::get('/install', [ShopifyController::class, 'redirectToShopify'])->name('shopify.install');
 
 // 2. The Callback URL (Must match the Redirect URI in Shopify Partner Dashboard)
 // This is where your code inserts data into the 'shops' and 'installation_data' tables
-Route::get('/auth/callback', [ShopifyController::class, 'handleCallback'])->name('shopify.callback');
+// Route::get('/auth/callback', [ShopifyController::class, 'handleCallback'])->name('shopify.callback');
 
 // 3. The App Home (where the user goes after installation)
-Route::get('/app', function () {
-    return view('welcome'); // Or your app dashboard
-})->name('app');
+// Route::get('/app', function () {
+//     return view('welcome'); // Or your app dashboard
+// })->name('app');
 
 // Webhook endpoints
-Route::post('/api/webhooks/app-uninstalled', [WebhookController::class, 'handleAppUninstalled']);
-Route::post('/api/webhooks/app-installed', [WebhookController::class, 'handleAppInstalled']);
+// Route::post('/api/webhooks/app-uninstalled', [WebhookController::class, 'handleAppUninstalled']);
+// Route::post('/api/webhooks/app-installed', [WebhookController::class, 'handleAppInstalled']);
 
-Route::get('/api/settings-data', [SettingsController::class, 'index']);
-Route::post('/api/settings', [SettingsController::class, 'store']);
 
 
 Route::fallback(function (Request $request) {
